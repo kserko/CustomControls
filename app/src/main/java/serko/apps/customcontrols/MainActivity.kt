@@ -102,6 +102,7 @@ fun RadialTemperatureDisplay(
 ) {
     Canvas(
         modifier = Modifier
+            .padding(8.dp)
             .fillMaxWidth()
             .height(500.dp)
     ) {
@@ -114,10 +115,11 @@ fun RadialTemperatureDisplay(
         val maxTemperature = temperature.maxTemperature
         val temperatureIncrements = temperature.increments
         val numItems = ((maxTemperature - minTemperature) / temperatureIncrements) + 1 // +1 to include an item for the max temperature
-        val sweepAngle = 185 // the degrees that we want to draw
+        val sweepAngle = 220 // the degrees that we want to draw
         val angleIncrements = sweepAngle / numItems
 
-        val lineLength = radius / 6f
+        val divider = 7f
+        val lineLength = radius / divider
 
         //the angle at which our target temperature line is drawn
         val targetTemperatureAngle = floor(((temperature.targetTemperature - minTemperature) / temperatureIncrements) * angleIncrements)
@@ -129,17 +131,18 @@ fun RadialTemperatureDisplay(
             //if the angle is lower or equal to the target temperature's angle then alpha should be 1
             val alpha = if (angle <= targetTemperatureAngle) 1.0f else 0.4f
 
+            val yOffset = -140f //negative value will create a slightly curved radial display
             //rotate the Canvas and draw a line
             rotate(angle) {
-                val start = center - Offset(radius, 0f)
-                val end = start + Offset(lineLength, 0f)
+                val start = center - Offset(radius, yOffset)
+                val end = start + Offset(lineLength, yOffset / divider) //end yOffset is relative to the line length so we divide with the same divider
                 drawLine(
                     color = Color.Magenta,
                     start = start,
                     end = end,
                     cap = StrokeCap.Round,
                     alpha = alpha,
-                    strokeWidth = 10f
+                    strokeWidth = 15f
                 )
             }
         }
@@ -150,7 +153,7 @@ fun RadialTemperatureDisplay(
 data class Temperature(
     var targetTemperature: Float = 19f,
     val minTemperature: Float = 12f,
-    val maxTemperature: Float = 28f,
+    val maxTemperature: Float = 32f,
     val increments: Float = 0.5f
 ) {
     val isNotAtMinimum get() = targetTemperature != minTemperature
