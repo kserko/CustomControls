@@ -8,31 +8,32 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.center
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import serko.apps.customcontrols.ui.theme.CustomControlsTheme
+import kotlin.math.PI
+import kotlin.math.cos
 import kotlin.math.floor
+import kotlin.math.sin
 
 class MainActivity : ComponentActivity() {
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
@@ -41,14 +42,14 @@ class MainActivity : ComponentActivity() {
         setContent {
             val temperature = remember { mutableStateOf(Temperature()) }
             CustomControlsTheme {
-                // A surface container using the 'background' color from the theme
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                     Column(
                         modifier = Modifier
                             .padding(12.dp)
                             .fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally
 
-                        ) {
+                    ) {
                         RadialTemperatureDisplay(temperature = temperature.value)
                         TemperatureControls(
                             modifier = Modifier
@@ -100,60 +101,65 @@ private fun TemperatureControls(
 fun RadialTemperatureDisplay(
     temperature: Temperature
 ) {
+    val minTemperaturePoint = temperature.minTemperature
+    val maxTemperaturePoint = temperature.maxTemperature
+    val temperaturePointIncrements = temperature.increments
+    val numItems = ((maxTemperaturePoint - minTemperaturePoint) / temperaturePointIncrements) + 1 // +1 to include an item for the max temperature
+    val sweepAngle = 250
+    val temperatureAngleIncrements = sweepAngle / numItems
+
     Canvas(
         modifier = Modifier
-            .padding(8.dp)
-            .fillMaxWidth()
-            .height(500.dp)
+            .padding(24.dp)
+            .width(360.dp)
+            .height(360.dp)
     ) {
-        val canvasWidth = size.width
-        val canvasHeight = size.height
-        val center = Offset(x = canvasWidth / 2, y = canvasHeight / 2)
-        val radius = (size.minDimension / 2.0f) //changing the divider here will change the size of the radial display
+        val radius = (size.minDimension / 1.8f) //changing the divider here will change the size of the radial display
+        val lineLength = radius * 0.8f // the length of each line drawn along the path
 
-        val minTemperature = temperature.minTemperature
-        val maxTemperature = temperature.maxTemperature
-        val temperatureIncrements = temperature.increments
-        val numItems = ((maxTemperature - minTemperature) / temperatureIncrements) + 1 // +1 to include an item for the max temperature
-        val sweepAngle = 220 // the degrees that we want to draw
-        val angleIncrements = sweepAngle / numItems
+        val targetTemperatureIndex = floor(((temperature.targetTemperature - minTemperaturePoint) / temperaturePointIncrements))
+        val targetTemperatureAngle = temperatureAngleIncrements * targetTemperatureIndex
 
-        val divider = 7f
-        val lineLength = radius / divider
+        //Iterate over each temperature and calculate the angle from the circle's origin. Then draw the
+        //line with the specified coordinates and line length
+        (0 until numItems.toInt()).forEach {temperatureIndex ->
+            //the offset added here is affect by the sweepAngle above and vice versa - need to find a formula of correlation
+            val angleDiff = ((temperatureAngleIncrements * temperatureIndex) + 150)
+            val temperaturePoint = minTemperaturePoint + (temperatureIndex * temperaturePointIncrements)
+            val temperatureAngle = temperatureAngleIncrements * temperatureIndex
+            println("temperature: $temperaturePoint - angle: $temperatureAngle")
 
-        //the angle at which our target temperature line is drawn
-        val targetTemperatureAngle = floor(((temperature.targetTemperature - minTemperature) / temperatureIncrements) * angleIncrements)
+            //Dim the line for temperatures that are beyond the target temperature
+            val alpha = if (temperatureAngle <= targetTemperatureAngle) 1.0f else 0.4f
 
-        repeat(numItems.toInt()) {
-            //the angle at which we are drawing the line for each temperature point
-            val angle = floor(it / numItems * sweepAngle)
+            //the angleDiff in  Radians
+            val angleDiffRadians = (angleDiff * (PI / 180f)).toFloat()
 
-            //if the angle is lower or equal to the target temperature's angle then alpha should be 1
-            val alpha = if (angle <= targetTemperatureAngle) 1.0f else 0.4f
+            val start = Offset(
+                x = radius * cos(angleDiffRadians) + size.center.x,
+                y = radius * sin(angleDiffRadians) + size.center.y
+            )
+            val end = Offset(
+                x = lineLength * cos(angleDiffRadians) + size.center.x,
+                y = lineLength * sin(angleDiffRadians) + size.center.y
+            )
 
-            val yOffset = -140f //negative value will create a slightly curved radial display
-            //rotate the Canvas and draw a line
-            rotate(angle) {
-                val start = center - Offset(radius, yOffset)
-                val end = start + Offset(lineLength, yOffset / divider) //end yOffset is relative to the line length so we divide with the same divider
-                drawLine(
-                    color = Color.Magenta,
-                    start = start,
-                    end = end,
-                    cap = StrokeCap.Round,
-                    alpha = alpha,
-                    strokeWidth = 15f
-                )
-            }
+            drawLine(
+                color = Color.Magenta,
+                start = start,
+                end = end,
+                cap = StrokeCap.Round,
+                alpha = alpha,
+                strokeWidth = 13f
+            )
         }
-
     }
 }
 
 data class Temperature(
-    var targetTemperature: Float = 19f,
-    val minTemperature: Float = 12f,
-    val maxTemperature: Float = 32f,
+    var targetTemperature: Float = 15f,
+    val minTemperature: Float = 10f,
+    val maxTemperature: Float = 30f,
     val increments: Float = 0.5f
 ) {
     val isNotAtMinimum get() = targetTemperature != minTemperature
