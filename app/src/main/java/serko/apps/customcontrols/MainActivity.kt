@@ -56,8 +56,11 @@ import serko.apps.customcontrols.TemperatureDirection.UP
 import serko.apps.customcontrols.ui.theme.CustomControlsTheme
 import kotlin.math.PI
 import kotlin.math.cos
-import kotlin.math.floor
 import kotlin.math.sin
+
+//Defines the rate at which consecutive user interactions are recorded on the UI when the user holds a finger down - lower is faster, higher is slow
+//Also used as the tween animation speed at which the temperature indicator moves so it keeps up with the rate of temperature change
+const val InteractionDelay = 130L
 
 class MainActivity : ComponentActivity() {
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
@@ -177,7 +180,9 @@ fun Modifier.repeatedPressInterceptor(interactionSource: InteractionSource, bloc
                     val heldButtonJob = launch {
                         while (downAction.pressed) {
                             block()
-                            delay(150)
+
+                            //Need this to process consecutive gesture inputs. If removed completely the app will freeze, crash and die
+                            delay(InteractionDelay)
                         }
                     }
                     waitForUpOrCancellation()
@@ -232,7 +237,7 @@ fun RadialTemperatureDisplay(
         }
         launch {
             //animate the indicator slowly on first launch but then speed it up for user interactions
-            val tweenSpeed = if (firstLaunch.value) 1400 else 200
+            val tweenSpeed = if (firstLaunch.value) 1400 else InteractionDelay.toInt()
             val targetAngle = ((temperatureAngleIncrements * targetTemperatureIndex) + degreesOffset)
             animatedIndicatorAngle.animateTo(targetAngle, animationSpec = tween(tweenSpeed))
             firstLaunch.value = false
