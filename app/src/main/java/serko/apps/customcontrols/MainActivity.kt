@@ -222,17 +222,20 @@ fun RadialTemperatureDisplay(
     val targetTemperatureAngle = temperatureAngleIncrements * targetTemperatureIndex
     val animatedVisibility = remember { Animatable(0.1f) }
 
+    val firstLaunch = remember { mutableStateOf(true) }
+
     //every time the target Temperature changes do something
-    println(targetTemperatureIndex)
     LaunchedEffect(targetTemperatureIndex) {
         launch {
             //Animate the visibility of the radial display
             animatedVisibility.animateTo(1f, animationSpec = tween(1000))
         }
         launch {
-            val tweenSpeed = if (targetTemperatureIndex == 0) 2400 else 400f
+            //animate the indicator slowly on first launch but then speed it up for user interactions
+            val tweenSpeed = if (firstLaunch.value) 1400 else 200
             val targetAngle = ((temperatureAngleIncrements * targetTemperatureIndex) + degreesOffset)
-            animatedIndicatorAngle.animateTo(targetAngle, animationSpec = tween(200))
+            animatedIndicatorAngle.animateTo(targetAngle, animationSpec = tween(tweenSpeed))
+            firstLaunch.value = false
         }
     }
 
@@ -341,7 +344,7 @@ private fun DrawScope.drawRadialControl(
 }
 
 data class Temperature(
-    val targetTemperature: Float = 30f,
+    val targetTemperature: Float = 22f,
     val minTemperature: Float = 10f,
     val maxTemperature: Float = 30f,
     val increments: Float = 0.5f
@@ -349,6 +352,6 @@ data class Temperature(
 
 @Composable
 fun HapticFeedback(newTemperature: Float) {
-    LocalHapticFeedback.current.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+    LocalHapticFeedback.current.performHapticFeedback(HapticFeedbackType.LongPress)
     print(newTemperature)
 }
