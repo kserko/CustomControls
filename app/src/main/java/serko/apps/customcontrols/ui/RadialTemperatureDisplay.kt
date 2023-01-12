@@ -39,14 +39,14 @@ fun RadialTemperatureDisplay(
 ) {
     val minTemperaturePoint = temperatureData.minTemperature
     val maxTemperaturePoint = temperatureData.maxTemperature
-    val temperaturePointIncrements = temperatureData.increments
-    val numItems = ((maxTemperaturePoint - minTemperaturePoint) / temperaturePointIncrements) + 1 // +1 to include an item for the max temperature
+    val temperaturePointIncrements = temperatureData.increment
+    val numItems = ((maxTemperaturePoint - minTemperaturePoint) / temperaturePointIncrements)
     val sweepAngle = 250f
-    val temperatureAngleIncrements = sweepAngle / numItems
+    val temperatureAngleIncrements = (sweepAngle / numItems)
 
     // The offset needed to the starting position of the circle to the desired position. If you picture the circle as a clock face,
     // an offset of 0 degrees would start drawing at 3:00. An offset of 150 degrees moves the starting position to about 7:00 so we match the designs
-    val degreesOffset = 150f
+    val degreesOffset = 145f
     val animatedIndicatorAngle = remember { Animatable(degreesOffset) }
 
     val targetTemperatureIndex = ((temperatureData.targetTemperature - minTemperaturePoint) / temperaturePointIncrements).toInt()
@@ -79,7 +79,7 @@ fun RadialTemperatureDisplay(
         val radius = (size.minDimension / 1.8f) //changing the divider here will change the size of the radial display
         val lineLength = (radius * 0.8f) // the length of each line drawn along the path
 
-        (0 until numItems.toInt()).forEach { temperatureIndex ->
+        (0 .. numItems.toInt()).forEach { temperatureIndex ->
             val angleDiff = ((temperatureAngleIncrements * temperatureIndex) + degreesOffset)
             val temperatureAngle = temperatureAngleIncrements * temperatureIndex
 

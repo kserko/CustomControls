@@ -96,8 +96,8 @@ private fun changeTemperature(
 ) {
     val temperature = temperatureDataObserver.value
     when (temperatureDirection) {
-        TemperatureDirection.DOWN -> newTemperature.value = newTemperature.value - 0.5f
-        TemperatureDirection.UP -> newTemperature.value = newTemperature.value + 0.5f
+        TemperatureDirection.DOWN -> newTemperature.value = newTemperature.value - temperature.increment
+        TemperatureDirection.UP -> newTemperature.value = newTemperature.value + temperature.increment
     }
     if (newTemperature.value <= temperature.maxTemperature || newTemperature.value >= temperature.minTemperature) {
         temperatureDataObserver.value = temperature.copy(targetTemperature = newTemperature.value)

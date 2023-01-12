@@ -62,9 +62,9 @@ class MainActivity : ComponentActivity() {
     @Composable
     private fun TemperatureLabel(temperatureDataObserver: MutableState<TemperatureData>) {
         Text(
-            text = temperatureDataObserver.value.targetTemperature.toString(),
+            text = String.format("%.1f", temperatureDataObserver.value.targetTemperature),
             style = TextStyle(color = Color.White, fontSize = 74.sp),
-            modifier = Modifier.offset(y = ((-300).dp))
+            modifier = Modifier.offset(y = ((-260).dp))
         )
     }
 }
