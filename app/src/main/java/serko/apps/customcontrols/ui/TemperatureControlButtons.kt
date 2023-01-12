@@ -94,13 +94,26 @@ private fun changeTemperature(
     newTemperature: MutableState<Float>,
     temperatureDataObserver: MutableState<TemperatureData>
 ) {
-    val temperature = temperatureDataObserver.value
+    val temperatureData = temperatureDataObserver.value
+
     when (temperatureDirection) {
-        TemperatureDirection.DOWN -> newTemperature.value = newTemperature.value - temperature.increment
-        TemperatureDirection.UP -> newTemperature.value = newTemperature.value + temperature.increment
+        TemperatureDirection.DOWN -> newTemperature.value = newTemperature.value - temperatureData.increment
+        TemperatureDirection.UP -> newTemperature.value = newTemperature.value + temperatureData.increment
     }
-    if (newTemperature.value <= temperature.maxTemperature || newTemperature.value >= temperature.minTemperature) {
-        temperatureDataObserver.value = temperature.copy(targetTemperature = newTemperature.value)
+
+    //if going over the max, return the max
+    if (newTemperature.value.isAboveMax(temperatureData)) {
+        temperatureDataObserver.value = temperatureData.copy(targetTemperature = temperatureData.maxTemperature)
+    }
+
+    //if going below the min, return the min
+    if (newTemperature.value.isBelowMin(temperatureData)) {
+        temperatureDataObserver.value = temperatureData.copy(targetTemperature = temperatureData.minTemperature)
+    }
+
+    //if between min and max, return new value
+    if (newTemperature.value.isBetweenMinAndMax(temperatureData)) {
+        temperatureDataObserver.value = temperatureData.copy(targetTemperature = newTemperature.value)
     }
 }
 
@@ -125,8 +138,13 @@ private fun Modifier.repeatedPressInterceptor(interactionSource: InteractionSour
         }
     }
 
+private fun Float.isAboveMax(temperatureData: TemperatureData) = this > temperatureData.maxTemperature
+private fun Float.isBelowMin(temperatureData: TemperatureData) = this < temperatureData.minTemperature
+private fun Float.isBetweenMinAndMax(temperatureData: TemperatureData) = !isBelowMin(temperatureData) && !isAboveMax(temperatureData)
+
+
 @Composable
 fun HapticFeedback(newTemperature: Float) {
     LocalHapticFeedback.current.performHapticFeedback(HapticFeedbackType.LongPress)
-    print(newTemperature)
+    println(newTemperature) //removing this stops the feedback from working (?)
 }
