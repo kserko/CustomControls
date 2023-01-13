@@ -6,7 +6,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
@@ -51,7 +50,7 @@ class MainActivity : ComponentActivity() {
                     RadialTemperatureDisplay(temperatureData = temperatureDataObserver.value)
                     TemperatureLabel(temperatureDataObserver)
                     TemperatureControlButtons(
-                        modifier = Modifier.fillMaxWidth().offset(y = (-150).dp), // move the controls closer to the display
+                        modifier = Modifier.offset(y = (-80).dp), // move the controls closer to the display
                         temperatureDataObserver = temperatureDataObserver,
                     )
                 }
