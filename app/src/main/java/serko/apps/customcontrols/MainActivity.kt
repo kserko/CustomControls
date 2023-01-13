@@ -50,7 +50,7 @@ class MainActivity : ComponentActivity() {
                     RadialTemperatureDisplay(temperatureData = temperatureDataObserver.value)
                     TemperatureLabel(temperatureDataObserver)
                     TemperatureControlButtons(
-                        modifier = Modifier.offset(y = (-80).dp), // move the controls closer to the display
+                        modifier = Modifier.offset(y = (-170).dp), // move the controls closer to the display
                         temperatureDataObserver = temperatureDataObserver,
                     )
                 }
