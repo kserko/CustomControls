@@ -36,7 +36,7 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     private fun Content() {
-        val temperatureDataObserver = remember { mutableStateOf(TemperatureData()) }
+        val temperatureDataState = remember { mutableStateOf(TemperatureData()) }
 
         CustomControlsTheme {
             Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
@@ -47,11 +47,11 @@ class MainActivity : ComponentActivity() {
                     horizontalAlignment = Alignment.CenterHorizontally
 
                 ) {
-                    RadialTemperatureDisplay(temperatureData = temperatureDataObserver.value)
-                    TemperatureLabel(temperatureDataObserver)
+                    RadialTemperatureDisplay(temperatureDataState = temperatureDataState)
+                    TemperatureLabel(temperatureDataState)
                     TemperatureControlButtons(
                         modifier = Modifier.offset(y = (-170).dp), // move the controls closer to the display
-                        temperatureDataObserver = temperatureDataObserver,
+                        temperatureDataState = temperatureDataState,
                     )
                 }
             }
@@ -59,9 +59,9 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    private fun TemperatureLabel(temperatureDataObserver: MutableState<TemperatureData>) {
+    private fun TemperatureLabel(temperatureDataState: MutableState<TemperatureData>) {
         Text(
-            text = String.format("%.1f", temperatureDataObserver.value.targetTemperature),
+            text = String.format("%.1f", temperatureDataState.value.targetTemperature),
             style = TextStyle(color = Color.White, fontSize = 74.sp),
             modifier = Modifier.offset(y = ((-260).dp))
         )

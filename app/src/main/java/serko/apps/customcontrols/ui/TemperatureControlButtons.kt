@@ -35,22 +35,22 @@ enum class TemperatureDirection {
 @Composable
 fun TemperatureControlButtons(
     modifier: Modifier,
-    temperatureDataObserver: MutableState<TemperatureData>,
+    temperatureDataState: MutableState<TemperatureData>,
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        ControlButton(Modifier, temperatureDataObserver, TemperatureDirection.DOWN)
-        ControlButton(Modifier, temperatureDataObserver, TemperatureDirection.UP)
-        HapticFeedback(temperatureDataObserver.value.targetTemperature)
+        ControlButton(Modifier, temperatureDataState, TemperatureDirection.DOWN)
+        ControlButton(Modifier, temperatureDataState, TemperatureDirection.UP)
+        HapticFeedback(temperatureDataState.value.targetTemperature)
     }
 }
 
 @Composable
 private fun ControlButton(
     modifier: Modifier,
-    temperatureDataObserver: MutableState<TemperatureData>,
+    temperatureDataState: MutableState<TemperatureData>,
     temperatureDirection: TemperatureDirection,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -65,7 +65,7 @@ private fun ControlButton(
                     //The block of code to run whe user interacts with the button
                     changeTemperature(
                         temperatureDirection = temperatureDirection,
-                        temperatureDataObserver = temperatureDataObserver
+                        temperatureDataState = temperatureDataState
                     )
                 }),
         onClick = {} //Clicks are handled by the repeatedPressInterceptor modifier above
@@ -81,13 +81,13 @@ private fun ControlButton(
 
 /**
  * Depending on the temperature direction (Up or Down) check new temperature boundaries
- * and update observer accordingly
+ * and update the state accordingly
  */
 private fun changeTemperature(
     temperatureDirection: TemperatureDirection,
-    temperatureDataObserver: MutableState<TemperatureData>
+    temperatureDataState: MutableState<TemperatureData>
 ) {
-    val temperatureData = temperatureDataObserver.value
+    val temperatureData = temperatureDataState.value
 
     val newTemperature = when (temperatureDirection) {
         TemperatureDirection.DOWN -> temperatureData.targetTemperature - temperatureData.increment
@@ -96,17 +96,17 @@ private fun changeTemperature(
 
     //if going over the max, return the max
     if (newTemperature.isAboveMax(temperatureData)) {
-        temperatureDataObserver.value = temperatureData.copy(targetTemperature = temperatureData.maxTemperature)
+        temperatureDataState.value = temperatureData.copy(targetTemperature = temperatureData.maxTemperature)
     }
 
     //if going below the min, return the min
     if (newTemperature.isBelowMin(temperatureData)) {
-        temperatureDataObserver.value = temperatureData.copy(targetTemperature = temperatureData.minTemperature)
+        temperatureDataState.value = temperatureData.copy(targetTemperature = temperatureData.minTemperature)
     }
 
     //if between min and max, return new value
     if (newTemperature.isBetweenMinAndMax(temperatureData)) {
-        temperatureDataObserver.value = temperatureData.copy(targetTemperature = newTemperature)
+        temperatureDataState.value = temperatureData.copy(targetTemperature = newTemperature)
     }
 }
 

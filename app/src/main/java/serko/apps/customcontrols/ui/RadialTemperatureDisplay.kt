@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -35,13 +36,14 @@ enum class TemperatureColor(val color: Color) {
 }
 @Composable
 fun RadialTemperatureDisplay(
-    temperatureData: TemperatureData,
+    temperatureDataState: MutableState<TemperatureData>,
 ) {
+    val temperatureData = temperatureDataState.value
     val minTemperaturePoint = temperatureData.minTemperature
     val maxTemperaturePoint = temperatureData.maxTemperature
     val temperaturePointIncrements = temperatureData.increment
     val numItems = ((maxTemperaturePoint - minTemperaturePoint) / temperaturePointIncrements)
-    val sweepAngle = 250f
+    val sweepAngle = 250f //the degrees we will be drawing our content on
     val temperatureAngleIncrements = (sweepAngle / numItems)
 
     // The offset needed to the starting position of the circle to the desired position. If you picture the circle as a clock face,
