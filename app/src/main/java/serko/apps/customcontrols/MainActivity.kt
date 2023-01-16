@@ -21,8 +21,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import serko.apps.customcontrols.ui.RadialTemperatureDisplay
 import serko.apps.customcontrols.ui.TemperatureControlButtons
+import serko.apps.customcontrols.ui.ThermostatDisplay
 import serko.apps.customcontrols.ui.theme.CustomControlsTheme
 
 class MainActivity : ComponentActivity() {
@@ -47,7 +47,7 @@ class MainActivity : ComponentActivity() {
                     horizontalAlignment = Alignment.CenterHorizontally
 
                 ) {
-                    RadialTemperatureDisplay(temperatureDataState = temperatureDataState)
+                    ThermostatDisplay(temperatureDataState = temperatureDataState)
                     TemperatureLabel(temperatureDataState)
                     TemperatureControlButtons(
                         modifier = Modifier.offset(y = (-170).dp), // move the controls closer to the display

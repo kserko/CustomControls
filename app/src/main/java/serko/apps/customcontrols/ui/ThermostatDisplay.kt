@@ -15,12 +15,21 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.center
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import serko.apps.customcontrols.TemperatureData
+import serko.apps.customcontrols.ui.ColorGradient.Blue
+import serko.apps.customcontrols.ui.ColorGradient.DarkBlue
+import serko.apps.customcontrols.ui.ColorGradient.Orange
+import serko.apps.customcontrols.ui.ColorGradient.Red
+import serko.apps.customcontrols.ui.TemperatureColor.Cold
+import serko.apps.customcontrols.ui.TemperatureColor.Hot
+import serko.apps.customcontrols.ui.TemperatureColor.Warm
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
@@ -34,8 +43,9 @@ enum class TemperatureColor(val color: Color) {
     Warm(color = Color(red = 250, green = 100, blue = 100)),
     Hot(color = Color(red = 255, green = 0, blue = 0)),
 }
+
 @Composable
-fun RadialTemperatureDisplay(
+fun ThermostatDisplay(
     temperatureDataState: MutableState<TemperatureData>,
 ) {
     val temperatureData = temperatureDataState.value
@@ -51,7 +61,8 @@ fun RadialTemperatureDisplay(
     val degreesOffset = 145f
     val animatedIndicatorAngle = remember { Animatable(degreesOffset) }
 
-    val targetTemperatureIndex = ((temperatureData.targetTemperature - minTemperaturePoint) / temperaturePointIncrements).toInt()
+    val targetTemperatureIndex =
+        ((temperatureData.targetTemperature - minTemperaturePoint) / temperaturePointIncrements).toInt()
     val targetTemperatureAngle = temperatureAngleIncrements * targetTemperatureIndex
     val animatedVisibility = remember { Animatable(0.1f) }
 
@@ -66,7 +77,8 @@ fun RadialTemperatureDisplay(
         launch {
             //animate the indicator slowly on first launch but then speed it up for user interactions
             val tweenSpeed = if (firstLaunch.value) 1400 else InteractionDelay.toInt()
-            val targetAngle = ((temperatureAngleIncrements * targetTemperatureIndex) + degreesOffset)
+            val targetAngle =
+                ((temperatureAngleIncrements * targetTemperatureIndex) + degreesOffset)
             animatedIndicatorAngle.animateTo(targetAngle, animationSpec = tween(tweenSpeed))
             firstLaunch.value = false
         }
@@ -78,20 +90,60 @@ fun RadialTemperatureDisplay(
             .width(360.dp)
             .height(360.dp)
     ) {
-        val radius = (size.minDimension / 1.8f) //changing the divider here will change the size of the radial display
+        val radius =
+            (size.minDimension / 1.8f) //changing the divider here will change the size of the radial display
         val lineLength = (radius * 0.8f) // the length of each line drawn along the path
 
-        (0 .. numItems.toInt()).forEach { temperatureIndex ->
+        drawArc(degreesOffset, sweepAngle, Offset(x = size.width / 2, y = size.height / 2))
+
+        (0..numItems.toInt()).forEach { temperatureIndex ->
             val angleDiff = ((temperatureAngleIncrements * temperatureIndex) + degreesOffset)
             val temperatureAngle = temperatureAngleIncrements * temperatureIndex
 
             //Dim the line for temperatures that are beyond the target temperature
-            val alphaValue = if (temperatureAngle <= targetTemperatureAngle) animatedVisibility.value else animatedVisibility.value * 0.2f
+            val alphaValue =
+                if (temperatureAngle <= targetTemperatureAngle) animatedVisibility.value else animatedVisibility.value * 0.2f
 
             val color = temperatureAngle.getTemperatureColorForAngle(sweepAngle)
-            drawRadialTemperatureDisplay(angleDiff, radius, lineLength, alphaValue, color)
-            drawRadialControlIndicator(animatedIndicatorAngle, radius, lineLength, alphaValue)
+//            drawThermostatLines(angleDiff, radius, lineLength, alphaValue, color)
+            drawThermostatIndicator(animatedIndicatorAngle, radius, lineLength, alphaValue)
         }
+    }
+}
+
+/**
+ * Draws an Arc with an optional gradient fill
+ */
+private fun DrawScope.drawArc(
+    degreesOffset: Float, sweepAngle: Float, center: Offset,
+    withGradient: Boolean = false
+) {
+    if (withGradient) {
+        val brush = Brush.sweepGradient(
+            //color offsets (starting from 3 o'clock
+            0.0f to Red.color,
+            0.1f to Red.color,
+            0.35f to Blue.color,
+            0.65f to DarkBlue.color,
+            0.75f to Orange.color,
+            1.0f to Red.color,
+            center = Offset(center.x, center.y)
+        )
+        drawArc(
+            brush = brush,
+            startAngle = degreesOffset,
+            sweepAngle = sweepAngle,
+            useCenter = false,
+            style = Stroke(width = 102f, cap = StrokeCap.Square)
+        )
+    } else {
+        drawArc(
+            color = Blue.color,
+            startAngle = degreesOffset,
+            sweepAngle = sweepAngle,
+            useCenter = false,
+            style = Stroke(width = 102f, cap = StrokeCap.Square)
+        )
     }
 }
 
@@ -108,9 +160,9 @@ private fun Float.getTemperatureColorForAngle(sweepAngle: Float): TemperatureCol
     val isBetweenColdAndHotSegments = this > segmentCold && this < segmentWarm
 
     val color = when {
-        this < segmentCold -> TemperatureColor.Cold
-        isBetweenColdAndHotSegments -> TemperatureColor.Warm
-        else -> TemperatureColor.Hot
+        this < segmentCold -> Cold
+        isBetweenColdAndHotSegments -> Warm
+        else -> Hot
     }
     return color
 }
@@ -119,11 +171,11 @@ private fun Float.getTemperatureColorForAngle(sweepAngle: Float): TemperatureCol
  * Draws a longer thicker line over the target temperature only
  * and acts as an indicator on the radial display
  */
-private fun DrawScope.drawRadialControlIndicator(
+private fun DrawScope.drawThermostatIndicator(
     animatedAngle: Animatable<Float, AnimationVector1D>,
     radius: Float,
     lineLength: Float,
-    alphaValue: Float
+    alphaValue: Float,
 ) {
     //the angleDiff in Radians
     val angleDiffRadians = (animatedAngle.value * (PI / 180f)).toFloat()
@@ -156,7 +208,7 @@ private fun DrawScope.drawRadialControlIndicator(
  * draws the line at the correct angle and length
  *
  */
-private fun DrawScope.drawRadialTemperatureDisplay(
+private fun DrawScope.drawThermostatLines(
     angleDiff: Float,
     radius: Float,
     lineLength: Float,
@@ -183,4 +235,12 @@ private fun DrawScope.drawRadialTemperatureDisplay(
         alpha = alphaValue,
         strokeWidth = 13f
     )
+}
+
+enum class ColorGradient(val color: Color) {
+    Blue(Color(red = 14, green = 0, blue = 255)),
+    DarkBlue(Color(red = 9, green = 9, blue = 121)),
+    Yellow(Color(red = 255, green = 193, blue = 7, alpha = 255)),
+    Orange(Color(red = 255, green = 114, blue = 7, alpha = 255)),
+    Red(Color(red = 255, green = 27, blue = 0))
 }
