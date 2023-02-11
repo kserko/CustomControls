@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import serko.apps.customcontrols.TemperatureData
@@ -84,9 +85,10 @@ fun ThermostatDisplay(
         }
     }
 
+    val padding = 34.dp
     Canvas(
         modifier = Modifier
-            .padding(24.dp)
+            .padding(padding)
             .width(360.dp)
             .height(330.dp)
     ) {
@@ -96,10 +98,15 @@ fun ThermostatDisplay(
         val lineLength = (radius * 0.8f) // the length of each line drawn along the path
 
         drawThermostatArc(
-            degreesOffset,
-            sweepAngle,
+            startAngle = degreesOffset,
+            sweepAngle = sweepAngle,
+            currentAngleValue = animatedIndicatorAngle.value,
+            radius = radius,
+            padding = padding,
             center = Offset(x = size.width / 2, y = size.height / 2)
         )
+//        drawArcIndicator(animatedIndicatorAngle, radius, lineLength)
+
 
         (0..numItems.toInt()).forEach { temperatureIndex ->
             val angleDiff = ((temperatureAngleIncrements * temperatureIndex) + degreesOffset)
@@ -113,7 +120,7 @@ fun ThermostatDisplay(
             val color = temperatureAngle.getTemperatureColorForAngle(sweepAngle)
 //            drawThermostatLines(angleDiff, radius, lineLength, alphaValue, color)
 //            drawLineIndicator(animatedIndicatorAngle, radius, lineLength, alphaValue)
-            drawArcIndicator(animatedIndicatorAngle, radius, lineLength)
+//            drawArcIndicator(animatedIndicatorAngle, radius, lineLength)
 
         }
     }
@@ -160,20 +167,19 @@ private fun DrawScope.drawArcIndicator(
 ) {
     val startAngle = 145f
     val sweepAngle = 250f
+    val totalDegreesToTravel = sweepAngle - startAngle
 
-    val angleDiffDegrees = animatedAngle.value - startAngle
+    val angleDiffDegrees = (animatedAngle.value - totalDegreesToTravel).toDouble() + 0
+    val progress = (angleDiffDegrees / totalDegreesToTravel)
+    println(progress)
 
-
-    //the angleDiff in Radians
-//    val angleDiffRadians = (animatedAngle.value * (PI / 180f)).toFloat()
-
-//    val x = (radius * sin(angleDiffRadians + (size.width / 2)))
-//    val y = (radius * cos(angleDiffRadians + (size.height / 2)))
+    val x = -(radius * sin(Math.toRadians(angleDiffDegrees))).toFloat() + (size.width / 2)
+    val y = (radius * cos(Math.toRadians(angleDiffDegrees))).toFloat() + (size.height / 2)
 
     drawCircle(
         color = Color.Yellow,
         radius = 15f,
-        center = size.center
+        center = Offset(x, y)
     )
 
 //    drawArc(
@@ -190,7 +196,12 @@ private fun DrawScope.drawArcIndicator(
  * Draws an Arc with an optional gradient fill
  */
 private fun DrawScope.drawThermostatArc(
-    startAngle: Float, sweepAngle: Float, center: Offset,
+    startAngle: Float,
+    sweepAngle: Float,
+    center: Offset,
+    currentAngleValue: Float,
+    radius: Float,
+    padding: Dp,
     withGradient: Boolean = false
 ) {
 
@@ -222,7 +233,39 @@ private fun DrawScope.drawThermostatArc(
             style = Stroke(width = 102f, cap = StrokeCap.Round)
         )
     }
+    val totalDegreesToTravel = sweepAngle + startAngle //395
+    val anglePercentageTravelled = currentAngleValue / totalDegreesToTravel
+    println(currentAngleValue)
+
+    val angle = currentAngleValue.toDouble()
+    val angleRad = Math.toRadians(angle).toFloat()
+    val offset = padding.value * (currentAngleValue / totalDegreesToTravel)
+    println(offset)
+    val start = Offset(
+        x = (radius + offset) * cos(angleRad) + size.center.x,
+        y = (radius + offset) * sin(angleRad) + size.center.y
+    )
+    val lineLength = radius - 100f
+    val end = Offset(
+        x = (lineLength - offset) * cos(angleRad) + size.center.x,
+        y = (lineLength - offset) * sin(angleRad) + size.center.y
+    )
+
+    drawLine(
+        color = Color.White,
+        start = start,
+        end = end,
+        cap = StrokeCap.Round,
+        strokeWidth = 43f
+    )
+
+//    drawCircle(
+//        color = Color.Yellow,
+//        radius = 15f,
+//        center = start
+//    )
 }
+
 
 /**
  * breaks the total number of angles into equal segments and returns a different color for each
