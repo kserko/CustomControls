@@ -88,17 +88,23 @@ fun ThermostatDisplay(
         modifier = Modifier
             .padding(24.dp)
             .width(360.dp)
-            .height(360.dp)
+            .height(330.dp)
     ) {
         val radius =
             (size.minDimension / 1.8f) //changing the divider here will change the size of the radial display
+
         val lineLength = (radius * 0.8f) // the length of each line drawn along the path
 
-        drawArc(degreesOffset, sweepAngle, Offset(x = size.width / 2, y = size.height / 2))
+        drawThermostatArc(
+            degreesOffset,
+            sweepAngle,
+            center = Offset(x = size.width / 2, y = size.height / 2)
+        )
 
         (0..numItems.toInt()).forEach { temperatureIndex ->
             val angleDiff = ((temperatureAngleIncrements * temperatureIndex) + degreesOffset)
             val temperatureAngle = temperatureAngleIncrements * temperatureIndex
+
 
             //Dim the line for temperatures that are beyond the target temperature
             val alphaValue =
@@ -106,18 +112,88 @@ fun ThermostatDisplay(
 
             val color = temperatureAngle.getTemperatureColorForAngle(sweepAngle)
 //            drawThermostatLines(angleDiff, radius, lineLength, alphaValue, color)
-            drawThermostatIndicator(animatedIndicatorAngle, radius, lineLength, alphaValue)
+//            drawLineIndicator(animatedIndicatorAngle, radius, lineLength, alphaValue)
+            drawArcIndicator(animatedIndicatorAngle, radius, lineLength)
+
         }
     }
 }
 
 /**
+ * Draws a longer thicker line over the target temperature only
+ * and acts as an indicator on the radial display
+ */
+private fun DrawScope.drawLineIndicator(
+    animatedAngle: Animatable<Float, AnimationVector1D>,
+    radius: Float,
+    lineLength: Float,
+    alphaValue: Float,
+) {
+    //the angleDiff in Radians
+    val angleDiffRadians = (animatedAngle.value * (PI / 180f)).toFloat()
+
+    val start = Offset(
+        x = (radius) * cos(angleDiffRadians) + size.center.x,
+        y = (radius) * sin(angleDiffRadians) + size.center.y
+    )
+
+
+    val end = Offset(
+        x = (lineLength) * cos(angleDiffRadians) + size.center.x,
+        y = (lineLength) * sin(angleDiffRadians) + size.center.y
+    )
+
+    drawLine(
+        color = Color.White,
+        start = start,
+        end = end,
+        cap = StrokeCap.Round,
+        alpha = alphaValue,
+        strokeWidth = 38f
+    )
+}
+
+private fun DrawScope.drawArcIndicator(
+    animatedAngle: Animatable<Float, AnimationVector1D>,
+    radius: Float,
+    alphaValue: Float,
+) {
+    val startAngle = 145f
+    val sweepAngle = 250f
+
+    val angleDiffDegrees = animatedAngle.value - startAngle
+
+
+    //the angleDiff in Radians
+//    val angleDiffRadians = (animatedAngle.value * (PI / 180f)).toFloat()
+
+//    val x = (radius * sin(angleDiffRadians + (size.width / 2)))
+//    val y = (radius * cos(angleDiffRadians + (size.height / 2)))
+
+    drawCircle(
+        color = Color.Yellow,
+        radius = 15f,
+        center = size.center
+    )
+
+//    drawArc(
+//        color = Red.color,
+//        startAngle = angleInDegrees,
+//        sweepAngle = 1f,
+//        useCenter = false,
+//        style = Stroke(width = 42f, cap = StrokeCap.Round)
+//    )
+
+}
+
+/**
  * Draws an Arc with an optional gradient fill
  */
-private fun DrawScope.drawArc(
-    degreesOffset: Float, sweepAngle: Float, center: Offset,
+private fun DrawScope.drawThermostatArc(
+    startAngle: Float, sweepAngle: Float, center: Offset,
     withGradient: Boolean = false
 ) {
+
     if (withGradient) {
         val brush = Brush.sweepGradient(
             //color offsets (starting from 3 o'clock
@@ -129,20 +205,21 @@ private fun DrawScope.drawArc(
             1.0f to Red.color,
             center = Offset(center.x, center.y)
         )
+
         drawArc(
             brush = brush,
-            startAngle = degreesOffset,
+            startAngle = startAngle,
             sweepAngle = sweepAngle,
             useCenter = false,
-            style = Stroke(width = 102f, cap = StrokeCap.Square)
+            style = Stroke(width = 102f, cap = StrokeCap.Round)
         )
     } else {
         drawArc(
             color = Blue.color,
-            startAngle = degreesOffset,
+            startAngle = startAngle,
             sweepAngle = sweepAngle,
             useCenter = false,
-            style = Stroke(width = 102f, cap = StrokeCap.Square)
+            style = Stroke(width = 102f, cap = StrokeCap.Round)
         )
     }
 }
@@ -167,39 +244,6 @@ private fun Float.getTemperatureColorForAngle(sweepAngle: Float): TemperatureCol
     return color
 }
 
-/**
- * Draws a longer thicker line over the target temperature only
- * and acts as an indicator on the radial display
- */
-private fun DrawScope.drawThermostatIndicator(
-    animatedAngle: Animatable<Float, AnimationVector1D>,
-    radius: Float,
-    lineLength: Float,
-    alphaValue: Float,
-) {
-    //the angleDiff in Radians
-    val angleDiffRadians = (animatedAngle.value * (PI / 180f)).toFloat()
-
-    val extraLength = 20f
-
-    val start = Offset(
-        x = (radius + extraLength) * cos(angleDiffRadians) + size.center.x,
-        y = (radius + extraLength) * sin(angleDiffRadians) + size.center.y
-    )
-    val end = Offset(
-        x = (lineLength - extraLength) * cos(angleDiffRadians) + size.center.x,
-        y = (lineLength - extraLength) * sin(angleDiffRadians) + size.center.y
-    )
-
-    drawLine(
-        color = Color.White,
-        start = start,
-        end = end,
-        cap = StrokeCap.Round,
-        alpha = alphaValue,
-        strokeWidth = 18f
-    )
-}
 
 /**
  * Draws the circular control display with lines at specific angles
