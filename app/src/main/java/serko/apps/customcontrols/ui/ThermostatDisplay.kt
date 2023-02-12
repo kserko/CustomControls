@@ -78,7 +78,8 @@ fun ThermostatDisplay(
         }
         launch {
             //animate the indicator slowly on first launch but then speed it up for user interactions
-            val tweenSpeed = if (firstLaunch.value) 1400 else InteractionDelay.toInt()
+            val tweenSpeed = InteractionDelay.toInt() //if (firstLaunch.value) 1400 else
+            // InteractionDelay.toInt()
             val targetAngle =
                 ((temperatureAngleIncrements * targetTemperatureIndex) + degreesOffset)
             currentTemperatureAngle.animateTo(targetAngle, animationSpec = tween(tweenSpeed))
@@ -86,30 +87,25 @@ fun ThermostatDisplay(
         }
     }
 
-    val padding = 34
-    val width = 360
-    val height = 400
     Canvas(
         modifier = Modifier
-            .width(width.dp)
-            .height(height.dp)
-            .padding(padding.dp)
+            .width(360.dp)
+            .height(380.dp)
+            .padding(horizontal = 14.dp)
+            .padding(vertical = 24.dp)
     ) {
         val radius =
             (size.minDimension / 1.8f) //changing the divider here will change the size of the radial display
 
         val lineLength = (radius * 0.8f) // the length of each line drawn along the path
 
-        //Use either the Arc based ellipse or the circular version
+        //Use either the Arc drawn controls here or the line based controls below, not both
         drawArcBasedThermostatControl(
             startAngle = degreesOffset,
             sweepAngle = sweepAngle,
             currentTemperatureAngle = currentTemperatureAngle.value,
-            radius = radius,
-            padding = padding,
             center = Offset(x = size.width / 2, y = size.height / 2)
         )
-
 
 //        drawLineBasedThermostatControl(
 //            numItems,
@@ -120,7 +116,7 @@ fun ThermostatDisplay(
 //            sweepAngle,
 //            radius,
 //            lineLength,
-//            animatedIndicatorAngle
+//            currentTemperatureAngle
 //        )
     }
 }
@@ -242,8 +238,6 @@ private fun DrawScope.drawArcBasedThermostatControl(
     sweepAngle: Float,
     center: Offset,
     currentTemperatureAngle: Float,
-    radius: Float,
-    padding: Int,
     withGradient: Boolean = false
 ) {
     if (withGradient) {
