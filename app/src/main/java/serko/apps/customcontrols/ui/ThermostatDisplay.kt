@@ -293,13 +293,15 @@ private fun DrawScope.drawArcBasedThermostatControl(
     going outward and inward respectively to create the illusion of a single line
      */
 
+    //the dividers on the width and height here determine the length of each line.
+    //can be tweaked to change according to requirements
     val line1EndPosition = Offset(
-        x = size.width / 1.7f * sin(ellipseAngleRad),
-        y = size.height / 1.7f * cos(ellipseAngleRad)
+        x = size.width / 1.8f * sin(ellipseAngleRad),
+        y = size.height / 1.8f * cos(ellipseAngleRad)
     )
     val line2EndPosition = Offset(
-        x = size.width / 2.5f * sin(ellipseAngleRad),
-        y = size.height / 2.5f * cos(ellipseAngleRad)
+        x = size.width / 2.3f * sin(ellipseAngleRad),
+        y = size.height / 2.3f * cos(ellipseAngleRad)
     )
     val line1Coordinates =
         Offset(line1EndPosition.x + horizontalOffset, line1EndPosition.y + verticalOffset)
@@ -312,7 +314,6 @@ private fun DrawScope.drawArcBasedThermostatControl(
 
     //draws second half of line from center of indicator position and inwards
     arcLineIndicator(indicatorCoordinates, line2Coordinates)
-
 
     /*
     - Don't remove -
