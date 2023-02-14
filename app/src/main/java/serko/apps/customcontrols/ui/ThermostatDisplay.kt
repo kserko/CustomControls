@@ -18,15 +18,15 @@ import androidx.compose.ui.geometry.center
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import serko.apps.customcontrols.TemperatureData
-import serko.apps.customcontrols.ui.ColorGradient.Blue
-import serko.apps.customcontrols.ui.ColorGradient.DarkBlue
-import serko.apps.customcontrols.ui.ColorGradient.Orange
-import serko.apps.customcontrols.ui.ColorGradient.Red
+import serko.apps.customcontrols.ui.ColorGradient.HeatingColourLight
+import serko.apps.customcontrols.ui.ColorGradient.HotWaterColourLight
+import serko.apps.customcontrols.ui.ColorGradient.HotWaterColourDark
 import serko.apps.customcontrols.ui.TemperatureColor.Cold
 import serko.apps.customcontrols.ui.TemperatureColor.Hot
 import serko.apps.customcontrols.ui.TemperatureColor.Warm
@@ -104,7 +104,6 @@ fun ThermostatDisplay(
             startAngle = degreesOffset,
             sweepAngle = sweepAngle,
             currentTemperatureAngle = currentTemperatureAngle.value,
-            center = Offset(x = size.width / 2, y = size.height / 2)
         )
 
 //        drawLineBasedThermostatControl(
@@ -236,32 +235,28 @@ private fun DrawScope.drawLineIndicator(
 private fun DrawScope.drawArcBasedThermostatControl(
     startAngle: Float,
     sweepAngle: Float,
-    center: Offset,
     currentTemperatureAngle: Float,
-    withGradient: Boolean = false
+    withGradient: Boolean = true
 ) {
     if (withGradient) {
-        val brush = Brush.sweepGradient(
-            //color offsets (starting from 3 o'clock
-            0.0f to Red.color,
-            0.1f to Red.color,
-            0.35f to Blue.color,
-            0.65f to DarkBlue.color,
-            0.75f to Orange.color,
-            1.0f to Red.color,
-            center = Offset(center.x, center.y)
+        val brush = Brush.radialGradient(
+            0.0f to HotWaterColourDark.color,
+            0.5f to HotWaterColourLight.color,
+            1.0f to HotWaterColourDark.color,
+            radius = 96f,
+            center = size.center,
+            tileMode = TileMode.Repeated
         )
-
         drawArc(
             brush = brush,
             startAngle = startAngle,
             sweepAngle = sweepAngle,
             useCenter = false,
-            style = Stroke(width = 102f, cap = StrokeCap.Round)
+            style = Stroke(width = 86f, cap = StrokeCap.Round)
         )
     } else {
         drawArc(
-            color = Blue.color,
+            color = HeatingColourLight.color,
             startAngle = startAngle,
             sweepAngle = sweepAngle,
             useCenter = false,
@@ -376,9 +371,8 @@ private fun Float.getTemperatureColorForAngle(sweepAngle: Float): TemperatureCol
 
 
 enum class ColorGradient(val color: Color) {
-    Blue(Color(red = 14, green = 0, blue = 255)),
-    DarkBlue(Color(red = 9, green = 9, blue = 121)),
-    Yellow(Color(red = 255, green = 193, blue = 7, alpha = 255)),
-    Orange(Color(red = 255, green = 114, blue = 7, alpha = 255)),
-    Red(Color(red = 255, green = 27, blue = 0))
+    HotWaterColourLight(Color(red = 166, green = 167, blue = 255, alpha = 255)),
+    HotWaterColourDark(Color(red = 102, green = 117, blue = 246, alpha = 255)),
+    HeatingColourLight(Color(red = 240, green = 80, blue = 248, alpha = 255)),
+    HeatingColourDark(Color(red = 187, green = 0, blue = 212, alpha = 255)),
 }
