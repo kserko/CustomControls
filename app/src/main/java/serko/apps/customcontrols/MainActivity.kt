@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import serko.apps.customcontrols.ui.TemperatureControlButtons
@@ -61,8 +62,8 @@ class MainActivity : ComponentActivity() {
     @Composable
     private fun TemperatureLabel(temperatureDataState: MutableState<TemperatureData>) {
         Text(
-            text = String.format("%.1f", temperatureDataState.value.targetTemperature),
-            style = TextStyle(color = Color.White, fontSize = 74.sp),
+            text = String.format("%.1f°C", temperatureDataState.value.targetTemperature),
+            style = TextStyle(color = Color.White, fontSize = 64.sp, fontWeight = FontWeight.Bold),
             modifier = Modifier.offset(y = ((-260).dp))
         )
     }

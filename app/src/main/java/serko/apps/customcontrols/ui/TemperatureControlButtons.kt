@@ -1,5 +1,6 @@
 package serko.apps.customcontrols.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.forEachGesture
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
@@ -58,7 +59,7 @@ private fun ControlButton(
     IconButton(
         modifier = modifier
             .size(100.dp, 100.dp)
-            .padding(12.dp)
+            .padding(0.dp)
             .repeatedPressInterceptor(
                 interactionSource,
                 block = {
