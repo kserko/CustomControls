@@ -27,6 +27,9 @@ import serko.apps.customcontrols.TemperatureData
 import serko.apps.customcontrols.ui.ColorGradient.HeatingColourLight
 import serko.apps.customcontrols.ui.ColorGradient.HotWaterColourLight
 import serko.apps.customcontrols.ui.ColorGradient.HotWaterColourDark
+import serko.apps.customcontrols.ui.CurrentTemperatureIndicator.Arc
+import serko.apps.customcontrols.ui.CurrentTemperatureIndicator.Circle
+import serko.apps.customcontrols.ui.CurrentTemperatureIndicator.Line
 import serko.apps.customcontrols.ui.TemperatureColor.Cold
 import serko.apps.customcontrols.ui.TemperatureColor.Hot
 import serko.apps.customcontrols.ui.TemperatureColor.Warm
@@ -37,6 +40,12 @@ import kotlin.math.sin
 //Defines the rate at which consecutive user interactions are recorded on the UI when the user holds a finger down - lower is faster, higher is slow
 //Also used as the tween animation speed at which the temperature indicator moves so it keeps up with the rate of temperature change
 const val InteractionDelay = 100L
+
+enum class CurrentTemperatureIndicator {
+    Line,
+    Circle,
+    Arc,
+}
 
 enum class TemperatureColor(val color: Color) {
     Cold(color = Color(red = 100, green = 100, blue = 255)),
@@ -236,14 +245,17 @@ private fun DrawScope.drawArcBasedThermostatControl(
     startAngle: Float,
     sweepAngle: Float,
     currentTemperatureAngle: Float,
-    withGradient: Boolean = true
+    withGradient: Boolean = true,
+    currentTemperatureIndicator: CurrentTemperatureIndicator = Line
 ) {
+    val arcWidth = 86f
+
     if (withGradient) {
         val brush = Brush.radialGradient(
             0.0f to HotWaterColourDark.color,
             0.5f to HotWaterColourLight.color,
             1.0f to HotWaterColourDark.color,
-            radius = 96f,
+            radius = 96f, //relates to arcWidth
             center = size.center,
             tileMode = TileMode.Repeated
         )
@@ -252,7 +264,7 @@ private fun DrawScope.drawArcBasedThermostatControl(
             startAngle = startAngle,
             sweepAngle = sweepAngle,
             useCenter = false,
-            style = Stroke(width = 86f, cap = StrokeCap.Round)
+            style = Stroke(width = arcWidth, cap = StrokeCap.Round)
         )
     } else {
         drawArc(
@@ -282,11 +294,47 @@ private fun DrawScope.drawArcBasedThermostatControl(
     //The position in the arc where we can draw our progress indicator
     val indicatorCoordinates = Offset(x + horizontalOffset, y + verticalOffset)
 
-    /*
-    Draws the line indicator. This is comprised of two half lines each starting from the
-    central position on the arc where we have computed the correct angle above and
-    going outward and inward respectively to create the illusion of a single line
-     */
+    when (currentTemperatureIndicator) {
+        Line -> {
+            drawLineIndicator(
+                ellipseAngleRad,
+                horizontalOffset,
+                verticalOffset,
+                indicatorCoordinates
+            )
+        }
+
+        Circle -> {
+            drawCircle(
+                color = HotWaterColourDark.color,
+                radius = arcWidth/4,
+                center = indicatorCoordinates
+            )
+        }
+
+        Arc -> {
+            drawArc(
+                color = HotWaterColourDark.color,
+                startAngle = startAngle,
+                sweepAngle = currentTemperatureAngle - startAngle,
+                useCenter = false,
+                style = Stroke(width = arcWidth, cap = StrokeCap.Round)
+            )
+        }
+    }
+}
+
+/**
+ * Draws the line indicator. This is comprised of two half lines each starting from the
+ * central position on the arc where we have computed the correct angle above and
+ * going outward and inward respectively to create the illusion of a single line
+ */
+private fun DrawScope.drawLineIndicator(
+    ellipseAngleRad: Float,
+    horizontalOffset: Float,
+    verticalOffset: Float,
+    indicatorCoordinates: Offset
+) {
 
     //the dividers on the width and height here determine the length of each line.
     //can be tweaked to change according to requirements
@@ -303,36 +351,10 @@ private fun DrawScope.drawArcBasedThermostatControl(
     val line2Coordinates =
         Offset(line2EndPosition.x + horizontalOffset, line2EndPosition.y + verticalOffset)
 
-
     //draws first half of line from center of indicator position and outwards
     arcLineIndicator(indicatorCoordinates, line1Coordinates)
-
     //draws second half of line from center of indicator position and inwards
     arcLineIndicator(indicatorCoordinates, line2Coordinates)
-
-    /*
-    - Don't remove -
-    This will draw an arc inside the main arc
-    that can act as a progress indicator
-    drawArc(
-        color = Red.color,
-        startAngle = startAngle,
-        sweepAngle = currentAngleValue - startAngle,
-        useCenter = false,
-        style = Stroke(width = 80f, cap = StrokeCap.Round)
-    )
-     */
-
-    /*
-    - Don't remove -
-    This wil draw a small circle a the calculated position
-    Useful for debugging the computed angle above
-    drawCircle(
-        color = Color.Green,
-        radius = 40f,
-        center = indicatorCoordinates
-    )
-     */
 }
 
 private fun DrawScope.arcLineIndicator(
