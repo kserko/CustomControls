@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -49,7 +50,9 @@ class MainActivity : ComponentActivity() {
 
                 ) {
                     ThermostatDisplay(temperatureDataState = temperatureDataState)
-                    TemperatureLabel(temperatureDataState)
+                    CurrentTemperatureLabel(temperatureDataState)
+                    TargetTemperatureLabel(temperatureDataState)
+
                     TemperatureControlButtons(
                         modifier = Modifier.offset(y = (-170).dp), // move the controls closer to the display
                         temperatureDataState = temperatureDataState,
@@ -60,13 +63,25 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    private fun TemperatureLabel(temperatureDataState: MutableState<TemperatureData>) {
+    private fun CurrentTemperatureLabel(temperatureDataState: MutableState<TemperatureData>) {
         Text(
-            text = String.format("%.1f°C", temperatureDataState.value.targetTemperature),
-            style = TextStyle(color = Color.White, fontSize = 64.sp, fontWeight = FontWeight.Bold),
+            text = String.format("Current: %.1f°C", temperatureDataState.value
+                .currentTemperature),
+            style = TextStyle(color = Color.White, fontSize = 26.sp, fontWeight = FontWeight.Bold),
             modifier = Modifier.offset(y = ((-260).dp))
         )
     }
+
+    @Composable
+    private fun TargetTemperatureLabel(temperatureDataState: MutableState<TemperatureData>) {
+        Text(
+            text = String.format("Target: %.1f°C", temperatureDataState.value
+                .targetTemperature),
+            style = TextStyle(color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold),
+            modifier = Modifier.offset(y = ((-260).dp))
+        )
+    }
+
 }
 
 
