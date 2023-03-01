@@ -31,7 +31,7 @@ import serko.apps.customcontrols.ui.CurrentTemperatureIndicator.Line
 import serko.apps.customcontrols.ui.TemperatureColor.Cold
 import serko.apps.customcontrols.ui.TemperatureColor.Hot
 import serko.apps.customcontrols.ui.TemperatureColor.Warm
-import kotlin.math.PI
+import java.lang.Math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -67,17 +67,22 @@ fun ThermostatDisplay(
     // along the path of the circle. An offset of 150 degrees moves the
     // starting position to about 7:00 so we match the designs
     val degreesOffset = 145f
-    val currentTemperatureAngle = remember { Animatable(degreesOffset) }
+
+    val currentTemperatureIndex =
+        ((temperatureData.currentTemperature - minTemperaturePoint) / temperaturePointIncrements)
+            .toInt()
+    val currentTemperatureAngle = remember { Animatable(temperatureAngleIncrements * currentTemperatureIndex) }
 
     val targetTemperatureIndex =
         ((temperatureData.targetTemperature - minTemperaturePoint) / temperaturePointIncrements).toInt()
-    val targetTemperatureAngle = temperatureAngleIncrements * targetTemperatureIndex
-    val animatedVisibility = remember { Animatable(0.1f) }
+    val targetTemperatureAngle = remember { Animatable(temperatureAngleIncrements * targetTemperatureIndex) }
 
+
+    val animatedVisibility = remember { Animatable(0.1f) }
     val firstLaunch = remember { mutableStateOf(true) }
 
     //every time the target Temperature changes do something
-    LaunchedEffect(targetTemperatureIndex) {
+    LaunchedEffect(targetTemperatureIndex, currentTemperatureIndex) {
         launch {
             //Animate the visibility of the radial display
             animatedVisibility.animateTo(1f, animationSpec = tween(1000))
@@ -85,10 +90,13 @@ fun ThermostatDisplay(
         launch {
             //animate the indicator slowly on first launch but then speed it up for user interactions
             val tweenSpeed = InteractionDelay.toInt() //if (firstLaunch.value) 1400 else
-            // InteractionDelay.toInt()
-            val targetAngle =
-                ((temperatureAngleIncrements * targetTemperatureIndex) + degreesOffset)
-            currentTemperatureAngle.animateTo(targetAngle, animationSpec = tween(tweenSpeed))
+
+            val targetAngle = ((temperatureAngleIncrements * targetTemperatureIndex) + degreesOffset)
+            targetTemperatureAngle.animateTo(targetAngle, animationSpec = tween(tweenSpeed))
+
+            val currentAngle = ((temperatureAngleIncrements * currentTemperatureIndex) + degreesOffset)
+            currentTemperatureAngle.animateTo(currentAngle, animationSpec = tween(tweenSpeed))
+
             firstLaunch.value = false
         }
     }
@@ -109,6 +117,7 @@ fun ThermostatDisplay(
         drawArcBasedThermostatControl(
             startAngle = degreesOffset,
             sweepAngle = sweepAngle,
+            targetTemperatureAngle = targetTemperatureAngle.value,
             currentTemperatureAngle = currentTemperatureAngle.value,
         )
 
@@ -241,8 +250,9 @@ private fun DrawScope.drawLineIndicator(
 private fun DrawScope.drawArcBasedThermostatControl(
     startAngle: Float,
     sweepAngle: Float,
+    targetTemperatureAngle: Float,
     currentTemperatureAngle: Float,
-    temperatureIndicator: CurrentTemperatureIndicator = Line
+    temperatureIndicator: CurrentTemperatureIndicator = Line,
 ) {
     val arcWidth = 86f
 
@@ -256,11 +266,10 @@ private fun DrawScope.drawArcBasedThermostatControl(
         style = Stroke(width = 100f, cap = StrokeCap.Round)
     )
 
-    //Draw progress arc. Changes based on currentTemperatureAngle
-    drawProgressArc(startAngle, currentTemperatureAngle, arcWidth)
+    //Draw current temperature's progress arc. Changes based on currentTemperatureAngle
+    drawArcForTemperature(startAngle, currentTemperatureAngle, arcWidth)
 
-    // Calculate the angles and coordinates for the placement of the progress indicator
-
+    // Calculate the angles and coordinates for the placement of the target temperature indicator
     val horizontalOffset = size.width / 2
     val verticalOffset = size.height / 2
 
@@ -269,22 +278,22 @@ private fun DrawScope.drawArcBasedThermostatControl(
     //is at the center bottom of the ellipse not at 3 o'clock as in a normal circle calculation
 
     //The angleOffset is added in order to move the indicator line a few degrees
-    // to cover the arc's rounded edge. If you set it to 0f and set the
-    // temperatureIndicator to Line you'll see what I mean
+    //to cover the arc's rounded edge. If you set it to 0f and set the current and target
+    //temperatures to be equal and temperatureIndicator to Line you'll see what I mean
     val angleOffset = 3f
-    val ellipseAngle = (currentTemperatureAngle - 90).toDouble() + angleOffset
+    val ellipseAngle = (targetTemperatureAngle - 90).toDouble() + angleOffset
 
-    //turn to Radians. Also convert to negative so it works clockwise
+    //Convert to Radians. Also convert to negative so it works clockwise
     val ellipseAngleRad = Math.toRadians(ellipseAngle).toFloat() * -1
 
-    //get the x and y coordinates of a given temperature's angle along the ellipse
+    //Get the x and y coordinates of a given temperature's angle along the ellipse
     val x = size.width / 2 * sin(ellipseAngleRad)
     val y = size.height / 2 * cos(ellipseAngleRad)
 
     //The position in the arc where we can draw our temperature indicator
     val indicatorCoordinates = Offset(x + horizontalOffset, y + verticalOffset)
 
-    //Draw the progress indicator
+    //Draw the target temperature's progress indicator
     when (temperatureIndicator) {
         Line -> {
             drawLineIndicator(
@@ -295,7 +304,7 @@ private fun DrawScope.drawArcBasedThermostatControl(
             )
         }
         Arc -> {
-            drawProgressArc(startAngle, currentTemperatureAngle, arcWidth)
+            drawArcForTemperature(startAngle, targetTemperatureAngle, arcWidth)
         }
     }
 }
@@ -304,9 +313,9 @@ private fun DrawScope.drawArcBasedThermostatControl(
  * Draws an arc that where the sweepAngle (i.e how much of the arc is drawn) changes
  * based on currentTemperatureAngle essentially acting as a progress indicator
  */
-private fun DrawScope.drawProgressArc(
+private fun DrawScope.drawArcForTemperature(
     startAngle: Float,
-    currentTemperatureAngle: Float,
+    temperatureAngle: Float,
     arcWidth: Float
 ) {
     val brush = Brush.radialGradient(
@@ -321,7 +330,7 @@ private fun DrawScope.drawProgressArc(
     drawArc(
         brush = brush,
         startAngle = startAngle,
-        sweepAngle = currentTemperatureAngle - startAngle,
+        sweepAngle = temperatureAngle - startAngle,
         useCenter = false,
         style = Stroke(width = arcWidth, cap = StrokeCap.Round)
     )
